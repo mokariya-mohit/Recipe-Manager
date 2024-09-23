@@ -7,6 +7,8 @@ dotenv.config();
 
 const authRoutes = require('./routes/authRoutes');
 const recipeRoutes = require('./routes/recipeRoutes');
+const errorHandler = require('./middlewares/errorMiddleware');
+
 
 const app = express();
 app.use(express.json());
@@ -19,6 +21,10 @@ mongoose.connect(process.env.MONGO_URI, {
 })
     .then(() => console.log('Connected to MongoDB'))
     .catch((err) => console.error(err));
+
+
+// Centralized error handling middleware
+app.use(errorHandler);
 
 // Routes
 app.use('/api/auth', authRoutes);

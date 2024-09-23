@@ -1,7 +1,7 @@
 const Recipe = require('../models/recipeModel');
 
 // Create a recipe
-exports.createRecipe = async (req, res) => {
+exports.createRecipe = async (req, res, next) => {
     const { title, ingredients, instructions, cuisineType } = req.body;
     const image = req.file ? req.file.path : '';
 
@@ -19,22 +19,22 @@ exports.createRecipe = async (req, res) => {
         await newRecipe.save();
         res.status(201).json(newRecipe);
     } catch (err) {
-        res.status(500).json({ message: 'Server error' });
+        next(err);
     }
 };
 
 // Get all recipes
-exports.getRecipes = async (req, res) => {
+exports.getRecipes = async (req, res, next) => {
     try {
-        const recipes = await Recipe.find({ user: req.user._id });
+        const recipes = await Recipe.find({ user: req.user._id }).select('title ingredients instructions cuisineType author image createdAt');
         res.json(recipes);
     } catch (err) {
-        res.status(500).json({ message: 'Server error' });
+        next(err);
     }
 };
 
 // Update a recipe
-exports.updateRecipe = async (req, res) => {
+exports.updateRecipe = async (req, res, next) => {
     const { title, ingredients, instructions, cuisineType } = req.body;
     const image = req.file ? req.file.path : undefined;
 
@@ -56,28 +56,22 @@ exports.updateRecipe = async (req, res) => {
         await recipe.save();
         res.json(recipe);
     } catch (err) {
-        res.status(500).json({ message: 'Server error' });
+        next(err);
     }
 };
 
 // Delete a recipe
-exports.deleteRecipe = async (req, res) => {
+exports.deleteRecipe = async (req, res, next) => {
     try {
-        // Find the recipe by ID and delete it
-        const recipe = await Recipe.findByIdAndDelete(req.params.id);
-
-        if (!recipe) {
-            return res.status(404).json({ message: 'Recipe not found' });
-        }
+        const recipe = await Recipe.findById(req.params.id);
 
         if (recipe.user.toString() !== req.user._id.toString()) {
             return res.status(401).json({ message: 'Not authorized' });
         }
 
-        res.json({ message: 'Recipe Deleted' });
+        await recipe.remove();
+        res.json({ message: 'Recipe removed' });
     } catch (err) {
-        console.error(err); // Log the error details for debugging
-        res.status(500).json({ message: 'Server error' });
+        next(err);
     }
 };
-
